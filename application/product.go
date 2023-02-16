@@ -3,6 +3,7 @@ package application
 import (
 	"errors"
 	"github.com/asaskevich/govalidator"
+	uuid "github.com/satori/go.uuid"
 )
 
 type ProductInterface interface {
@@ -15,6 +16,26 @@ type ProductInterface interface {
 	GetPrice() float64
 }
 
+type ProductServiceInterface interface {
+	Get(id string) (ProductInterface, error)
+	Create(name string, price float64) (ProductInterface, error)
+	Enable(product ProductInterface) (ProductInterface, error)
+	Disable(product ProductInterface) (ProductInterface, error)
+}
+
+type ProductReader interface {
+	Get(id string) (ProductInterface, error)
+}
+
+type ProductWriter interface {
+	Save(product ProductInterface) (ProductInterface, error)
+}
+
+type ProductPersistenceInterface interface {
+	ProductReader
+	ProductWriter
+}
+
 const (
 	DISABLED = "disabled"
 	ENABLED  = "enabled"
@@ -25,6 +46,13 @@ type Product struct {
 	Name   string  `valid:"required"`
 	Price  float64 `valid:"float,optional"`
 	Status string  `valid:"required"`
+}
+
+func NewProdut() *Product {
+	return &Product{
+		ID:     uuid.NewV4().String(),
+		Status: DISABLED,
+	}
 }
 
 func init() {
@@ -59,7 +87,7 @@ func (p *Product) Enable() error {
 	return errors.New("the price most be greater than zero to enable the product")
 }
 
-func (p *Product) Disabled() error {
+func (p *Product) Disable() error {
 	if p.Price == 0 {
 		p.Status = DISABLED
 		return nil
